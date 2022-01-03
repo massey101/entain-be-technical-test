@@ -81,6 +81,7 @@ curl -X "POST" "http://localhost:8000/v1/list-races" \
 
 1. Add another filter to the existing RPC, so we can call `ListRaces` asking for races that are visible only.
    > We'd like to continue to be able to fetch all races regardless of their visibility, so try naming your filter as logically as possible. https://cloud.google.com/apis/design/standard_methods#list
+   > Done.
 2. We'd like to see the races returned, ordered by their `advertised_start_time`
    > Bonus points if you allow the consumer to specify an ORDER/SORT-BY they might be after. 
 3. Our races require a new `status` field that is derived based on their `advertised_start_time`'s. The status is simply, `OPEN` or `CLOSED`. All races that have an `advertised_start_time` in the past should reflect `CLOSED`. 
