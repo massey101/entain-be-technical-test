@@ -18,6 +18,8 @@ service Racing {
 // Request for ListRaces call.
 message ListRacesRequest {
   ListRacesRequestFilter filter = 1;
+  // order_by string as per google API design patterns
+  optional string order_by = 2;
 }
 
 // Response to ListRaces call.

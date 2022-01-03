@@ -17,7 +17,7 @@ type RacesRepo interface {
 	Init() error
 
 	// List will return a list of races.
-	List(filter *racing.ListRacesRequestFilter) ([]*racing.Race, error)
+	List(filter *racing.ListRacesRequestFilter, orderBy *string) ([]*racing.Race, error)
 }
 
 type racesRepo struct {
@@ -42,7 +42,7 @@ func (r *racesRepo) Init() error {
 	return err
 }
 
-func (r *racesRepo) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race, error) {
+func (r *racesRepo) List(filter *racing.ListRacesRequestFilter, orderBy *string) ([]*racing.Race, error) {
 	var (
 		err   error
 		query string
@@ -52,6 +52,7 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race,
 	query = getRaceQueries()[racesList]
 
 	query, args = r.applyFilter(query, filter)
+	query = r.applyOrdering(query, orderBy)
 
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
@@ -89,6 +90,65 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 	}
 
 	return query, args
+}
+
+func convertOrderByFieldToSql(orderByField string) (orderByFieldSql string, ok bool) {
+	// Important to verify against allowed field names to protect from SQL
+	// injection.
+	sortableFields := map[string]string{
+		"name":                  "name",
+		"number":                "number",
+		"advertised_start_time": "advertised_start_time",
+	}
+
+	orderByFieldSplit := strings.Fields(orderByField)
+	if len(orderByFieldSplit) > 2 {
+		return "", false
+	}
+	field := orderByFieldSplit[0]
+	databaseField, ok := sortableFields[field]
+	if !ok {
+		return "", false
+	}
+	orderByFieldSql += databaseField
+	if len(orderByFieldSplit) == 2 {
+		desc := strings.ToLower(orderByFieldSplit[1])
+		if strings.Contains(desc, "desc") {
+			orderByFieldSql += " DESC"
+		}
+	}
+	return orderByFieldSql, true
+}
+
+func convertOrderByToSql(orderBy string) (orderBySql string) {
+	var sqls []string
+	orderBySql = ""
+
+	for _, orderByField := range strings.Split(orderBy, ",") {
+		orderByField = strings.TrimSpace(orderByField)
+		if orderByFieldSql, ok := convertOrderByFieldToSql(orderByField); ok {
+			sqls = append(sqls, orderByFieldSql)
+		}
+	}
+	if len(sqls) != 0 {
+		orderBySql = " ORDER BY " + strings.Join(sqls, ", ")
+	}
+	return orderBySql
+}
+
+// If specified this will apply the ordering specified in the request to the
+// SQL SELECT query. The format of the order_by in the query is a comma
+// seperated list of fields with "desc" as a suffix to change the ordering.
+// e.g. "advertised_start_time, name desc"
+// https://cloud.google.com/apis/design/design_patterns#sorting_order
+func (r *racesRepo) applyOrdering(query string, orderBy *string) string {
+	if orderBy == nil {
+		return query
+	}
+
+	orderBySql := convertOrderByToSql(*orderBy)
+
+	return query + orderBySql
 }
 
 func (m *racesRepo) scanRaces(

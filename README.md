@@ -84,6 +84,7 @@ curl -X "POST" "http://localhost:8000/v1/list-races" \
    > Done.
 2. We'd like to see the races returned, ordered by their `advertised_start_time`
    > Bonus points if you allow the consumer to specify an ORDER/SORT-BY they might be after. 
+   > Done.
 3. Our races require a new `status` field that is derived based on their `advertised_start_time`'s. The status is simply, `OPEN` or `CLOSED`. All races that have an `advertised_start_time` in the past should reflect `CLOSED`. 
    > There's a number of ways this could be implemented. Just have a go!
 4. Introduce a new RPC, that allows us to fetch a single race by its ID.
