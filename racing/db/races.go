@@ -74,7 +74,7 @@ func (r *racesRepo) Get(id int64) (*racing.Race, error) {
 		return nil, err
 	}
 	if len(races) != 1 {
-		// From the uber style guie fmt.Errorf is appropriate
+		// From the uber style guide fmt.Errorf is appropriate
 		return nil, fmt.Errorf("no race with id: %v", id)
 	}
 	return races[0], nil
