@@ -8,6 +8,7 @@ Please treat the services provided as if they would live in a real-world environ
 
 - `api`: A basic REST gateway, forwarding requests onto service(s).
 - `racing`: A very bare-bones racing service.
+- `sports`: A very bare-bones sports service.
 
 ```
 entain/
@@ -15,6 +16,11 @@ entain/
 │  ├─ proto/
 │  ├─ main.go
 ├─ racing/
+│  ├─ db/
+│  ├─ proto/
+│  ├─ service/
+│  ├─ main.go
+├─ sports/
 │  ├─ db/
 │  ├─ proto/
 │  ├─ service/
@@ -49,7 +55,16 @@ go build && ./racing
 ➜ INFO[0000] gRPC server listening on: localhost:9000
 ```
 
-3. In another terminal window, start our api service...
+3. In a terminal window, start our sports service...
+
+```bash
+cd ./sports
+
+go build && ./sports
+➜ INFO[0000] gRPC server listening on: localhost:9001
+```
+
+4. In another terminal window, start our api service...
 
 ```bash
 cd ./api
@@ -67,6 +82,40 @@ curl -X "POST" "http://localhost:8000/v1/list-races" \
   "filter": {}
 }'
 ```
+
+6. Make a request for a race...
+
+```bash
+curl "http://localhost:8000/v1/race/1"
+```
+
+7. Make a request for sports events...
+
+```bash
+curl -X "POST" "http://localhost:8000/v1/list-events" \
+     -H 'Content-Type: application/json' \
+     -d $'{
+  "filter": {}
+}'
+```
+
+8. Make a request for a sports event...
+
+```bash
+curl "http://localhost:8000/v1/event/1"
+```
+
+7. Make a request for visible hockey events ordered by start date...
+
+```bash
+curl -X "POST" "http://localhost:8000/v1/list-events" \
+     -H 'Content-Type: application/json' \
+     -d $'{
+  "filter": {"visible": true, "sports": ["hockey"]},
+  "order_by": "advertised_start_time"
+}'
+```
+
 
 ### Changes/Updates Required
 
@@ -92,10 +141,10 @@ curl -X "POST" "http://localhost:8000/v1/list-races" \
    > This link here might help you on your way: https://cloud.google.com/apis/design/standard_methods#get
    > Done.
 5. Create a `sports` service that for sake of simplicity, implements a similar API to racing. This sports API can be called `ListEvents`. We'll leave it up to you to determine what you might think a sports event is made up off, but it should at minimum have an `id`, a `name` and an `advertised_start_time`.
-
-> Note: this should be a separate service, not bolted onto the existing racing service. At an extremely high-level, the diagram below attempts to provide a visual representation showing the separation of services needed and flow of requests.
-> 
-> ![](example.png)
+   > Note: this should be a separate service, not bolted onto the existing racing service. At an extremely high-level, the diagram below attempts to provide a visual representation showing the separation of services needed and flow of requests.
+   >
+   > ![](example.png)
+   > Done.
 
 
 **Don't forget:**

@@ -1,0 +1,63 @@
+syntax = "proto3";
+package sports;
+
+option go_package = "/sports";
+
+import "google/protobuf/timestamp.proto";
+
+service Sports {
+  // ListEvents will return a collection of all events.
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse) {}
+  // GetEvent will return an event by id.
+  rpc GetEvent(GetEventRequest) returns (Event) {}
+}
+
+/* Requests/Responses */
+
+message ListEventsRequest {
+  ListEventsRequestFilter filter = 1;
+  // order_by string as per google API design patterns
+  optional string order_by = 2;
+}
+
+// Response to ListEvents call.
+message ListEventsResponse {
+  repeated Event events = 1;
+}
+
+// Filter for listing events.
+message ListEventsRequestFilter {
+  repeated string sports = 1;
+  repeated int64 leagues = 2;
+  optional bool visible = 3;
+  repeated string sides = 4;
+  repeated int64 ids = 5;
+}
+
+message GetEventRequest {
+  int64 id = 1;
+}
+
+/* Resources */
+
+// An event resource.
+message Event {
+  // ID represents a unique identifier for the event.
+  int64 id = 1;
+  // Sport is the name of the sport to be played at the event
+  string sport = 2;
+  // League represents a unique identifier for the league the event is in.
+  int64 league = 3;
+  // HomeTeamName is the name of the home team/person.
+  string home_side_name = 4;
+  // AwayTeamName is the name of the away team/person.
+  string away_side_name = 5;
+  // Name is the name given to the event based on the teams.
+  string name = 6;
+  // Visible represents whether or not the event is visible.
+  bool visible = 7;
+  // AdvertisedStartTime is the time the event is advertised to run.
+  google.protobuf.Timestamp advertised_start_time = 8;
+  // Status reflects whether or not the event is open or closed for bets.
+  string status = 9;
+}
