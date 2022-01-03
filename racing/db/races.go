@@ -151,6 +151,13 @@ func (r *racesRepo) applyOrdering(query string, orderBy *string) string {
 	return query + orderBySql
 }
 
+func getRaceStatus(advertisedStart time.Time) string {
+	if advertisedStart.Before(time.Now()) {
+		return "CLOSED"
+	}
+	return "OPEN"
+}
+
 func (m *racesRepo) scanRaces(
 	rows *sql.Rows,
 ) ([]*racing.Race, error) {
@@ -174,6 +181,8 @@ func (m *racesRepo) scanRaces(
 		}
 
 		race.AdvertisedStartTime = ts
+
+		race.Status = getRaceStatus(advertisedStart)
 
 		races = append(races, &race)
 	}
