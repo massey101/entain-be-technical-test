@@ -1,6 +1,6 @@
 ## Entain BE Technical Test
 
-This test has been designed to demonstrate your ability and understanding of technologies commonly used at Entain. 
+This test has been designed to demonstrate your ability and understanding of technologies commonly used at Entain.
 
 Please treat the services provided as if they would live in a real-world environment.
 
@@ -73,7 +73,7 @@ go build && ./api
 ➜ INFO[0000] API server listening on: localhost:8000
 ```
 
-4. Make a request for races... 
+5. Make a request for races...
 
 ```bash
 curl -X "POST" "http://localhost:8000/v1/list-races" \
@@ -123,8 +123,8 @@ curl -X "POST" "http://localhost:8000/v1/list-events" \
 - This means, we'd end up with **5x PR's** in total. **Each PR should target the previous**, so they build on one-another.
 - Alternatively you can merge each PR/MR after each other into master.
 - This will allow us to review your changes as well as we possibly can.
-- As your code will be reviewed by multiple people, it's preferred if the repository is **publicly accessible**. 
-- If making the repository public is not possible; you may choose to create a separate account or ask us for multiple email addresses which you can then add as viewers. 
+- As your code will be reviewed by multiple people, it's preferred if the repository is **publicly accessible**.
+- If making the repository public is not possible; you may choose to create a separate account or ask us for multiple email addresses which you can then add as viewers.
 
 ... and now to the test! Please complete the following tasks.
 
@@ -132,9 +132,9 @@ curl -X "POST" "http://localhost:8000/v1/list-events" \
    > We'd like to continue to be able to fetch all races regardless of their visibility, so try naming your filter as logically as possible. https://cloud.google.com/apis/design/standard_methods#list
    > Done.
 2. We'd like to see the races returned, ordered by their `advertised_start_time`
-   > Bonus points if you allow the consumer to specify an ORDER/SORT-BY they might be after. 
+   > Bonus points if you allow the consumer to specify an ORDER/SORT-BY they might be after.
    > Done.
-3. Our races require a new `status` field that is derived based on their `advertised_start_time`'s. The status is simply, `OPEN` or `CLOSED`. All races that have an `advertised_start_time` in the past should reflect `CLOSED`. 
+3. Our races require a new `status` field that is derived based on their `advertised_start_time`'s. The status is simply, `OPEN` or `CLOSED`. All races that have an `advertised_start_time` in the past should reflect `CLOSED`.
    > There's a number of ways this could be implemented. Just have a go!
    > Done.
 4. Introduce a new RPC, that allows us to fetch a single race by its ID.
