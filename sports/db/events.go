@@ -9,50 +9,50 @@ import (
 	"sync"
 	"time"
 
-	"git.neds.sh/matty/entain/racing/proto/racing"
+	"git.neds.sh/jmassey/entain/sports/proto/sports"
 )
 
-// RacesRepo provides repository access to races.
-type RacesRepo interface {
-	// Init will initialise our races repository.
+// EventsRepo provides repository access to events.
+type EventsRepo interface {
+	// Init will initialise our events repository.
 	Init() error
 
-	// List will return a list of races.
-	List(filter *racing.ListRacesRequestFilter, orderBy *string) ([]*racing.Race, error)
-	// Get will return a race by ID.
-	Get(id int64) (*racing.Race, error)
+	// List will return a list of events.
+	List(filter *sports.ListEventsRequestFilter, orderBy *string) ([]*sports.Event, error)
+	// Get will return an event by ID.
+	Get(id int64) (*sports.Event, error)
 }
 
-type racesRepo struct {
+type eventsRepo struct {
 	db   *sql.DB
 	init sync.Once
 }
 
-// NewRacesRepo creates a new races repository.
-func NewRacesRepo(db *sql.DB) RacesRepo {
-	return &racesRepo{db: db}
+// NewEventsRepo creates a new events repository.
+func NewEventsRepo(db *sql.DB) EventsRepo {
+	return &eventsRepo{db: db}
 }
 
-// Init prepares the race repository dummy data.
-func (r *racesRepo) Init() error {
+// Init prepares the event repository dummy data.
+func (r *eventsRepo) Init() error {
 	var err error
 
 	r.init.Do(func() {
-		// For test/example purposes, we seed the DB with some dummy races.
+		// For test/example purposes, we seed the DB with some dummy events.
 		err = r.seed()
 	})
 
 	return err
 }
 
-func (r *racesRepo) List(filter *racing.ListRacesRequestFilter, orderBy *string) ([]*racing.Race, error) {
+func (r *eventsRepo) List(filter *sports.ListEventsRequestFilter, orderBy *string) ([]*sports.Event, error) {
 	var (
 		err   error
 		query string
 		args  []interface{}
 	)
 
-	query = getRaceQueries()[racesList]
+	query = getEventQueries()[eventsList]
 
 	query, args = r.applyFilter(query, filter)
 	query = r.applyOrdering(query, orderBy)
@@ -62,25 +62,25 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter, orderBy *string)
 		return nil, err
 	}
 
-	return r.scanRaces(rows)
+	return r.scanEvents(rows)
 }
 
-func (r *racesRepo) Get(id int64) (*racing.Race, error) {
+func (r *eventsRepo) Get(id int64) (*sports.Event, error) {
 	// Repurpose listing functionality with an additional filter for
 	// consistancy.
-	filter := racing.ListRacesRequestFilter{Ids: []int64{id}}
-	races, err := r.List(&filter, nil)
+	filter := sports.ListEventsRequestFilter{Ids: []int64{id}}
+	events, err := r.List(&filter, nil)
 	if err != nil {
 		return nil, err
 	}
-	if len(races) != 1 {
+	if len(events) != 1 {
 		// From the uber style guide fmt.Errorf is appropriate
-		return nil, fmt.Errorf("no race with id: %v", id)
+		return nil, fmt.Errorf("no event with id: %v", id)
 	}
-	return races[0], nil
+	return events[0], nil
 }
 
-func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFilter) (string, []interface{}) {
+func (r *eventsRepo) applyFilter(query string, filter *sports.ListEventsRequestFilter) (string, []interface{}) {
 	var (
 		clauses []string
 		args    []interface{}
@@ -90,11 +90,30 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 		return query, args
 	}
 
-	if len(filter.MeetingIds) > 0 {
-		clauses = append(clauses, "meeting_id IN ("+strings.Repeat("?,", len(filter.MeetingIds)-1)+"?)")
+	if len(filter.Sports) > 0 {
+		clauses = append(clauses, "sport IN ("+strings.Repeat("?,", len(filter.Sports)-1)+"?)")
 
-		for _, meetingID := range filter.MeetingIds {
-			args = append(args, meetingID)
+		for _, sport := range filter.Sports {
+			args = append(args, sport)
+		}
+	}
+
+	if len(filter.Leagues) > 0 {
+		clauses = append(clauses, "league IN ("+strings.Repeat("?,", len(filter.Leagues)-1)+"?)")
+
+		for _, league := range filter.Leagues {
+			args = append(args, league)
+		}
+	}
+
+	if len(filter.Sides) > 0 {
+		clauses = append(clauses, "(home_side_name IN ("+strings.Repeat("?,", len(filter.Sides)-1)+"?) OR away_side_name IN ("+strings.Repeat("?,", len(filter.Sides)-1)+"?))")
+
+		for _, side := range filter.Sides {
+			args = append(args, side)
+		}
+		for _, side := range filter.Sides {
+			args = append(args, side)
 		}
 	}
 
@@ -122,8 +141,10 @@ func convertOrderByFieldToSql(orderByField string) (orderByFieldSql string, ok b
 	// Important to verify against allowed field names to protect from SQL
 	// injection.
 	sortableFields := map[string]string{
-		"name":                  "name",
-		"number":                "number",
+		"home_side_name":        "home_side_name",
+		"away_side_name":        "away_side_name",
+		"league":                "league",
+		"sport":                 "sport",
 		"advertised_start_time": "advertised_start_time",
 	}
 
@@ -167,7 +188,7 @@ func convertOrderByToSql(orderBy string) (orderBySql string) {
 // seperated list of fields with "desc" as a suffix to change the ordering.
 // e.g. "advertised_start_time, name desc"
 // https://cloud.google.com/apis/design/design_patterns#sorting_order
-func (r *racesRepo) applyOrdering(query string, orderBy *string) string {
+func (r *eventsRepo) applyOrdering(query string, orderBy *string) string {
 	if orderBy == nil {
 		return query
 	}
@@ -177,23 +198,23 @@ func (r *racesRepo) applyOrdering(query string, orderBy *string) string {
 	return query + orderBySql
 }
 
-func getRaceStatus(advertisedStart time.Time) string {
+func getEventStatus(advertisedStart time.Time) string {
 	if advertisedStart.Before(time.Now()) {
 		return "CLOSED"
 	}
 	return "OPEN"
 }
 
-func (m *racesRepo) scanRaces(
+func (m *eventsRepo) scanEvents(
 	rows *sql.Rows,
-) ([]*racing.Race, error) {
-	var races []*racing.Race
+) ([]*sports.Event, error) {
+	var events []*sports.Event
 
 	for rows.Next() {
-		var race racing.Race
+		var event sports.Event
 		var advertisedStart time.Time
 
-		if err := rows.Scan(&race.Id, &race.MeetingId, &race.Name, &race.Number, &race.Visible, &advertisedStart); err != nil {
+		if err := rows.Scan(&event.Id, &event.Sport, &event.League, &event.HomeSideName, &event.AwaySideName, &event.Visible, &advertisedStart); err != nil {
 			if err == sql.ErrNoRows {
 				return nil, nil
 			}
@@ -201,17 +222,19 @@ func (m *racesRepo) scanRaces(
 			return nil, err
 		}
 
+		event.Name = event.HomeSideName + " vs " + event.AwaySideName
+
 		ts, err := ptypes.TimestampProto(advertisedStart)
 		if err != nil {
 			return nil, err
 		}
 
-		race.AdvertisedStartTime = ts
+		event.AdvertisedStartTime = ts
 
-		race.Status = getRaceStatus(advertisedStart)
+		event.Status = getEventStatus(advertisedStart)
 
-		races = append(races, &race)
+		events = append(events, &event)
 	}
 
-	return races, nil
+	return events, nil
 }

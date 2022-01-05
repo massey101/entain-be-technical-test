@@ -1,6 +1,6 @@
 ## Entain BE Technical Test
 
-This test has been designed to demonstrate your ability and understanding of technologies commonly used at Entain. 
+This test has been designed to demonstrate your ability and understanding of technologies commonly used at Entain.
 
 Please treat the services provided as if they would live in a real-world environment.
 
@@ -8,6 +8,7 @@ Please treat the services provided as if they would live in a real-world environ
 
 - `api`: A basic REST gateway, forwarding requests onto service(s).
 - `racing`: A very bare-bones racing service.
+- `sports`: A very bare-bones sports service.
 
 ```
 entain/
@@ -15,6 +16,11 @@ entain/
 │  ├─ proto/
 │  ├─ main.go
 ├─ racing/
+│  ├─ db/
+│  ├─ proto/
+│  ├─ service/
+│  ├─ main.go
+├─ sports/
 │  ├─ db/
 │  ├─ proto/
 │  ├─ service/
@@ -49,7 +55,16 @@ go build && ./racing
 ➜ INFO[0000] gRPC server listening on: localhost:9000
 ```
 
-3. In another terminal window, start our api service...
+3. In a terminal window, start our sports service...
+
+```bash
+cd ./sports
+
+go build && ./sports
+➜ INFO[0000] gRPC server listening on: localhost:9001
+```
+
+4. In another terminal window, start our api service...
 
 ```bash
 cd ./api
@@ -58,7 +73,7 @@ go build && ./api
 ➜ INFO[0000] API server listening on: localhost:8000
 ```
 
-4. Make a request for races... 
+5. Make a request for races...
 
 ```bash
 curl -X "POST" "http://localhost:8000/v1/list-races" \
@@ -68,14 +83,48 @@ curl -X "POST" "http://localhost:8000/v1/list-races" \
 }'
 ```
 
+6. Make a request for a race...
+
+```bash
+curl "http://localhost:8000/v1/race/1"
+```
+
+7. Make a request for sports events...
+
+```bash
+curl -X "POST" "http://localhost:8000/v1/list-events" \
+     -H 'Content-Type: application/json' \
+     -d $'{
+  "filter": {}
+}'
+```
+
+8. Make a request for a sports event...
+
+```bash
+curl "http://localhost:8000/v1/event/1"
+```
+
+7. Make a request for visible hockey events ordered by start date...
+
+```bash
+curl -X "POST" "http://localhost:8000/v1/list-events" \
+     -H 'Content-Type: application/json' \
+     -d $'{
+  "filter": {"visible": true, "sports": ["hockey"]},
+  "order_by": "advertised_start_time"
+}'
+```
+
+
 ### Changes/Updates Required
 
 - We'd like to see you push this repository up to **GitHub/Gitlab/Bitbucket** and lodge a **Pull/Merge Request for each** of the below tasks.
 - This means, we'd end up with **5x PR's** in total. **Each PR should target the previous**, so they build on one-another.
 - Alternatively you can merge each PR/MR after each other into master.
 - This will allow us to review your changes as well as we possibly can.
-- As your code will be reviewed by multiple people, it's preferred if the repository is **publicly accessible**. 
-- If making the repository public is not possible; you may choose to create a separate account or ask us for multiple email addresses which you can then add as viewers. 
+- As your code will be reviewed by multiple people, it's preferred if the repository is **publicly accessible**.
+- If making the repository public is not possible; you may choose to create a separate account or ask us for multiple email addresses which you can then add as viewers.
 
 ... and now to the test! Please complete the following tasks.
 
@@ -83,19 +132,19 @@ curl -X "POST" "http://localhost:8000/v1/list-races" \
    > We'd like to continue to be able to fetch all races regardless of their visibility, so try naming your filter as logically as possible. https://cloud.google.com/apis/design/standard_methods#list
    > Done.
 2. We'd like to see the races returned, ordered by their `advertised_start_time`
-   > Bonus points if you allow the consumer to specify an ORDER/SORT-BY they might be after. 
+   > Bonus points if you allow the consumer to specify an ORDER/SORT-BY they might be after.
    > Done.
-3. Our races require a new `status` field that is derived based on their `advertised_start_time`'s. The status is simply, `OPEN` or `CLOSED`. All races that have an `advertised_start_time` in the past should reflect `CLOSED`. 
+3. Our races require a new `status` field that is derived based on their `advertised_start_time`'s. The status is simply, `OPEN` or `CLOSED`. All races that have an `advertised_start_time` in the past should reflect `CLOSED`.
    > There's a number of ways this could be implemented. Just have a go!
    > Done.
 4. Introduce a new RPC, that allows us to fetch a single race by its ID.
    > This link here might help you on your way: https://cloud.google.com/apis/design/standard_methods#get
    > Done.
 5. Create a `sports` service that for sake of simplicity, implements a similar API to racing. This sports API can be called `ListEvents`. We'll leave it up to you to determine what you might think a sports event is made up off, but it should at minimum have an `id`, a `name` and an `advertised_start_time`.
-
-> Note: this should be a separate service, not bolted onto the existing racing service. At an extremely high-level, the diagram below attempts to provide a visual representation showing the separation of services needed and flow of requests.
-> 
-> ![](example.png)
+   > Note: this should be a separate service, not bolted onto the existing racing service. At an extremely high-level, the diagram below attempts to provide a visual representation showing the separation of services needed and flow of requests.
+   >
+   > ![](example.png)
+   > Done.
 
 
 **Don't forget:**
