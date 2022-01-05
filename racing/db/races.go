@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/golang/protobuf/ptypes"
 	_ "github.com/mattn/go-sqlite3"
 	"strings"
@@ -18,6 +19,8 @@ type RacesRepo interface {
 
 	// List will return a list of races.
 	List(filter *racing.ListRacesRequestFilter, orderBy *string) ([]*racing.Race, error)
+	// Get will return a race by ID.
+	Get(id int64) (*racing.Race, error)
 }
 
 type racesRepo struct {
@@ -62,6 +65,21 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter, orderBy *string)
 	return r.scanRaces(rows)
 }
 
+func (r *racesRepo) Get(id int64) (*racing.Race, error) {
+	// Repurpose listing functionality with an additional filter for
+	// consistancy.
+	filter := racing.ListRacesRequestFilter{Ids: []int64{id}}
+	races, err := r.List(&filter, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(races) != 1 {
+		// From the uber style guie fmt.Errorf is appropriate
+		return nil, fmt.Errorf("no race with id: %v", id)
+	}
+	return races[0], nil
+}
+
 func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFilter) (string, []interface{}) {
 	var (
 		clauses []string
@@ -77,6 +95,14 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 
 		for _, meetingID := range filter.MeetingIds {
 			args = append(args, meetingID)
+		}
+	}
+
+	if len(filter.Ids) > 0 {
+		clauses = append(clauses, "id IN ("+strings.Repeat("?,", len(filter.Ids)-1)+"?)")
+
+		for _, ID := range filter.Ids {
+			args = append(args, ID)
 		}
 	}
 
