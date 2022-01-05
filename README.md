@@ -145,6 +145,8 @@ curl -X "POST" "http://localhost:8000/v1/list-events" \
    >
    > ![](example.png)
    > Done.
+6. Add the pagination feature to the `sports` and `racing` list services for better google API compliance. As specified in https://cloud.google.com/apis/design/design_patterns#list_pagination
+   > Listable collections *should* support pagination, even if results are typically small.
 
 
 **Don't forget:**
